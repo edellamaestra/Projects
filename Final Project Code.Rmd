@@ -1,0 +1,62 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+```{r}
+setwd("~/Documents/ECON 590")
+library(readxl)
+Data <- read_excel("FINAL PROJECT DATA.xls")
+newData = na.omit(Data)
+```
+```{r}
+library(tidyverse)
+library(dbplyr)
+slm <- lm(Salary ~ PTS, data = newData)
+summary(slm)
+ggplot(Data, aes(PTS, Salary)) +
+  geom_point() +
+  stat_smooth(method = lm)
+```
+
+```{r}
+set.seed(36)
+dt = sort(sample(nrow(newData), nrow(newData)*.75))
+train <- newData[dt,]
+test <- newData[-dt,]
+```
+
+
+```{r}
+library(bestglm)
+fullmod= glm(Salary~.-Player-Tm-Pos, data = train)
+summary(fullmod)
+```
+
+```{r}
+library(caret)
+library(leaps)
+library(MASS)
+step.model <- stepAIC(fullmod, direction = "both", 
+                      trace = FALSE)
+summary(step.model)
+```
+
+
+```{r}
+forward.model <- stepAIC(fullmod, direction = "forward", 
+                      trace = FALSE)
+summary(forward.model)
+
+backward.model <- stepAIC(fullmod, direction = "backward", 
+                      trace = FALSE)
+summary(backward.model)
+```
+```{r}
+pred <- predict(step.model, test)
+actual <- test$Salary
+MSEdata <- data.frame(pred, actual)
+MSEdata
+mean((MSEdata$actual-MSEdata$pred)^2)
+```
+
